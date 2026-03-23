@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Running Gear &mdash; Knowledge Graph</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
+
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --blue:#0035D5;--blue-link:#116DFF;--navy:#001849;--teal:#38B8B8;
+    --pink:#DA1D6C;--purple:#7A3CE6;--gray:#64748b;
+    --gray-bg:rgba(232,234,238,0.4);--gray-bg-solid:#e8eaee;--white:#ffffff;
+  }
+  html{font-size:18px}
+  body{font-family:'DM Sans',sans-serif;color:var(--navy);background:var(--white);
+    height:100vh;display:flex;flex-direction:column;-webkit-font-smoothing:antialiased}
+
+  /* ── NAV ── */
+  nav{
+    position:sticky;top:0;z-index:100;
+    background:rgba(255,255,255,0.92);backdrop-filter:blur(12px);
+    border-bottom:1px solid var(--gray-bg-solid);
+    padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:60px;
+  }
+  .logo{font-weight:700;font-size:0.95rem;letter-spacing:0.03em;
+    background:linear-gradient(135deg,var(--navy) 0%,#1a3a8a 40%,#2a6b8a 70%,var(--navy) 100%);
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+    white-space:nowrap}
+  .nav-right{display:flex;gap:1.5rem;align-items:center}
+  .stat-pill{text-align:center}
+  .stat-pill .num{font-size:0.95rem;font-weight:700;color:var(--teal)}
+  .stat-pill .label{font-size:0.6rem;color:var(--gray);text-transform:uppercase;letter-spacing:0.05em}
+
+  /* ── TABS ── */
+  .tabs{display:flex;gap:0.5rem;padding:0.75rem 2rem;background:var(--white);border-bottom:1px solid var(--gray-bg-solid)}
+  .tab{padding:0.45rem 1.2rem;border-radius:24px;cursor:pointer;font-size:0.78rem;font-weight:600;
+    border:2px solid var(--gray-bg-solid);background:var(--white);color:var(--navy);transition:all .2s;
+    font-family:'DM Sans',sans-serif}
+  .tab:hover{border-color:var(--blue);color:var(--blue)}
+  .tab.active{background:var(--blue);color:var(--white);border-color:var(--blue)}
+
+  /* ── PANELS ── */
+  .panel{display:none;flex:1;overflow:hidden;flex-direction:column}
+  .panel.active{display:flex}
+
+  /* ── CHAT PANEL ── */
+  .chat-container{flex:1;overflow-y:auto;padding:2rem;display:flex;flex-direction:column;gap:1rem;
+    max-width:900px;width:100%;margin:0 auto}
+
+  .message{max-width:85%;padding:1rem 1.2rem;border-radius:16px;line-height:1.65;font-size:0.88rem;animation:fadeIn .3s ease}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1}}
+
+  .message.user{background:var(--blue);color:var(--white);align-self:flex-end;border-bottom-right-radius:4px}
+  .message.assistant{background:var(--white);color:var(--navy);align-self:flex-start;border-bottom-left-radius:4px;
+    border:1px solid var(--gray-bg-solid);box-shadow:0 2px 12px rgba(0,24,73,0.04)}
+  .message.assistant strong{color:var(--navy)}
+  .message.assistant code{background:var(--gray-bg);padding:1px 5px;border-radius:4px;font-size:0.82rem}
+  .message.assistant .tools-used{margin-top:0.75rem;padding-top:0.6rem;border-top:1px solid var(--gray-bg-solid);font-size:0.72rem;color:var(--gray)}
+  .message.assistant .tools-used span{background:rgba(0,53,213,0.08);color:var(--blue);padding:2px 8px;border-radius:10px;margin-right:4px;font-size:0.68rem;font-weight:600}
+  .message.system{background:linear-gradient(135deg,var(--navy) 0%,#0a2a7a 40%,var(--blue) 100%);color:rgba(255,255,255,0.9);
+    align-self:center;font-size:0.82rem;text-align:center;border-radius:12px;padding:1.2rem 2rem;box-shadow:0 4px 20px rgba(0,24,73,0.15)}
+  .message.system strong{color:var(--teal)}
+
+  .typing{display:flex;gap:5px;padding:1rem 1.2rem;background:var(--white);border-radius:16px;
+    border-bottom-left-radius:4px;align-self:flex-start;border:1px solid var(--gray-bg-solid)}
+  .typing span{width:8px;height:8px;background:var(--teal);border-radius:50%;animation:bounce 1.4s infinite}
+  .typing span:nth-child(2){animation-delay:.2s}
+  .typing span:nth-child(3){animation-delay:.4s}
+  @keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
+
+  .examples{display:flex;flex-wrap:wrap;gap:0.5rem;justify-content:center;padding:0 2rem 1rem;max-width:900px;margin:0 auto}
+  .examples button{background:var(--white);border:2px solid var(--gray-bg-solid);border-radius:24px;padding:0.45rem 1.2rem;
+    font-size:0.78rem;font-weight:600;font-family:'DM Sans',sans-serif;color:var(--navy);cursor:pointer;transition:all .2s}
+  .examples button:hover{border-color:var(--blue);color:var(--blue);background:rgba(0,53,213,0.03)}
+
+  .chat-bottom{max-width:900px;width:100%;margin:0 auto}
+  .api-bar{background:var(--gray-bg);padding:6px 2rem;display:flex;align-items:center;gap:10px;font-size:0.72rem}
+  .api-bar label{color:var(--gray);white-space:nowrap;font-weight:500}
+  .api-bar input{flex:1;max-width:320px;padding:4px 10px;border:1px solid var(--gray-bg-solid);border-radius:6px;
+    font-size:0.72rem;font-family:'DM Sans',monospace;background:var(--white);outline:none}
+  .api-bar input:focus{border-color:var(--blue)}
+  .api-bar .hint{color:var(--gray);font-size:0.65rem}
+
+  .input-bar{background:var(--white);padding:1rem 2rem;border-top:1px solid var(--gray-bg-solid);display:flex;gap:0.75rem}
+  .input-bar input{flex:1;padding:0.75rem 1.2rem;border:2px solid var(--gray-bg-solid);border-radius:24px;
+    font-size:0.88rem;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .2s;color:var(--navy)}
+  .input-bar input:focus{border-color:var(--blue)}
+  .input-bar input::placeholder{color:var(--gray)}
+  .input-bar button{background:var(--blue);color:var(--white);border:none;border-radius:24px;padding:0.75rem 1.5rem;
+    font-size:0.88rem;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .2s}
+  .input-bar button:hover{background:#002bb0;box-shadow:0 4px 12px rgba(0,53,213,0.3)}
+  .input-bar button:disabled{background:var(--gray-bg-solid);color:var(--gray);cursor:not-allowed;box-shadow:none}
+
+  /* ── API DOCS PANEL ── */
+  .docs{flex:1;overflow-y:auto;max-width:900px;margin:0 auto;padding:2rem;width:100%}
+  .docs h2{font-size:1.5rem;font-weight:700;color:var(--navy);margin-bottom:0.3rem}
+  .docs .claim{font-size:0.88rem;color:var(--gray);margin-bottom:2rem}
+  .docs h3{font-size:1rem;font-weight:700;color:var(--navy);margin:1.5rem 0 0.5rem;display:flex;align-items:center;gap:0.5rem}
+  .docs p{font-size:0.88rem;color:var(--navy);line-height:1.7;margin-bottom:0.75rem}
+  .docs .base-url{background:var(--navy);color:var(--teal);padding:0.8rem 1.2rem;border-radius:10px;font-family:'DM Mono',monospace;
+    font-size:0.82rem;margin-bottom:1.5rem;display:flex;align-items:center;justify-content:space-between}
+  .docs .base-url .copy-btn{background:rgba(56,184,184,0.2);border:none;color:var(--teal);padding:0.3rem 0.8rem;
+    border-radius:6px;cursor:pointer;font-size:0.72rem;font-weight:600;font-family:'DM Sans',sans-serif}
+  .docs .base-url .copy-btn:hover{background:rgba(56,184,184,0.35)}
+
+  .endpoint{background:var(--white);border:1px solid var(--gray-bg-solid);border-radius:12px;padding:1.2rem;margin-bottom:0.75rem;transition:box-shadow .2s}
+  .endpoint:hover{box-shadow:0 4px 16px rgba(0,24,73,0.06)}
+  .endpoint .method{display:inline-block;padding:0.15rem 0.55rem;border-radius:6px;font-size:0.68rem;font-weight:700;
+    letter-spacing:0.04em;margin-right:0.5rem}
+  .method-get{background:#dcfce7;color:#166534}
+  .method-post{background:#dbeafe;color:#1e40af}
+  .endpoint .path{font-family:'DM Mono',monospace;font-size:0.82rem;font-weight:600;color:var(--navy)}
+  .endpoint .desc{font-size:0.78rem;color:var(--gray);margin-top:0.3rem}
+  .endpoint .example{background:var(--navy);color:#d4d4d8;padding:0.7rem 1rem;border-radius:8px;
+    font-family:'DM Mono',monospace;font-size:0.75rem;margin-top:0.6rem;overflow-x:auto;line-height:1.5}
+  .endpoint .example .kw{color:var(--teal)}
+  .endpoint .example .str{color:#fbbf24}
+  .endpoint .example .num{color:#a78bfa}
+
+  .badge{font-size:0.65rem;padding:0.2rem 0.7rem;border-radius:12px;font-weight:600}
+  .badge-teal{background:rgba(56,184,184,0.15);color:#0d9488}
+  .badge-purple{background:rgba(122,60,230,0.12);color:var(--purple)}
+
+  footer{text-align:center;padding:0.6rem;font-size:0.68rem;color:var(--gray);letter-spacing:0.03em}
+
+  @media(max-width:768px){nav{padding:0 1rem}.docs{padding:1rem}.chat-container{padding:1rem}}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div style="display:flex;align-items:center;gap:0.6rem">
+    <svg width="28" height="28" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs><linearGradient id="gearGrad" x1="0" y1="0" x2="64" y2="64"><stop offset="0%" stop-color="#001849"/><stop offset="40%" stop-color="#1a3a8a"/><stop offset="70%" stop-color="#2a6b8a"/><stop offset="100%" stop-color="#001849"/></linearGradient></defs>
+      <!-- Axle body -->
+      <rect x="8" y="29" width="48" height="6" rx="3" fill="url(#gearGrad)"/>
+      <!-- Left wheel pair -->
+      <rect x="4" y="16" width="10" height="14" rx="3" fill="url(#gearGrad)" opacity="0.85"/>
+      <rect x="4" y="34" width="10" height="14" rx="3" fill="url(#gearGrad)" opacity="0.85"/>
+      <!-- Right wheel pair -->
+      <rect x="50" y="16" width="10" height="14" rx="3" fill="url(#gearGrad)" opacity="0.85"/>
+      <rect x="50" y="34" width="10" height="14" rx="3" fill="url(#gearGrad)" opacity="0.85"/>
+      <!-- Vertical connectors -->
+      <rect x="11" y="14" width="4" height="36" rx="2" fill="url(#gearGrad)" opacity="0.7"/>
+      <rect x="49" y="14" width="4" height="36" rx="2" fill="url(#gearGrad)" opacity="0.7"/>
+      <!-- Center hub -->
+      <circle cx="32" cy="32" r="6" fill="url(#gearGrad)" opacity="0.9"/>
+      <circle cx="32" cy="32" r="2.5" fill="white"/>
+    </svg>
+    <div class="logo">Running Gear Knowledge Graph</div>
+  </div>
+  <div class="nav-right">
+    <div class="stat-pill"><div class="num" id="stat-nodes">&mdash;</div><div class="label">Knoten</div></div>
+    <div class="stat-pill"><div class="num" id="stat-edges">&mdash;</div><div class="label">Kanten</div></div>
+    <div class="stat-pill"><div class="num" id="stat-version">&mdash;</div><div class="label">Version</div></div>
+  </div>
+</nav>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab" data-tab="graph" onclick="switchTab('graph')">Graph Description</div>
+  <div class="tab active" data-tab="chat" onclick="switchTab('chat')">GraphChat <span style="font-size:0.58rem;font-weight:700;background:var(--teal);color:white;padding:1px 6px;border-radius:8px;margin-left:3px;vertical-align:middle;letter-spacing:0.05em">BETA</span></div>
+  <div class="tab" data-tab="api" onclick="switchTab('api')">API</div>
+</div>
+
+<!-- ═══════════ CHAT PANEL ═══════════ -->
+<div class="panel active" id="panel-chat">
+
+  <div class="chat-container" id="chat">
+    <div class="message system">
+      Willkommen beim <strong>Running Gear Knowledge Graph</strong> &mdash; Stell eine Frage zu Bauteilen, Cross-References, Normen oder Zulieferern.
+    </div>
+  </div>
+
+  <div class="examples">
+    <button onclick="askExample(this)">Cross-References f&uuml;r BPW 05.397.28.01.0?</button>
+    <button onclick="askExample(this)">Wer liefert Radlager an BPW?</button>
+    <button onclick="askExample(this)">KBA-R&uuml;ckrufe f&uuml;r Krone?</button>
+    <button onclick="askExample(this)">Welche Normen gelten f&uuml;r Trailer-Bremsen?</button>
+    <button onclick="askExample(this)">Wie viele Zulieferer hat BPW?</button>
+  </div>
+
+  <div class="chat-bottom">
+    <div class="api-bar" style="display:none">
+      <input type="hidden" id="apiKey" value="" />
+    </div>
+    <div class="input-bar">
+      <input type="text" id="userInput" placeholder="Frag den Graphen etwas..." autofocus
+             onkeydown="if(event.key==='Enter') sendMessage()" />
+      <button id="sendBtn" onclick="sendMessage()">Senden</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ GRAPH PANEL ═══════════ -->
+<div class="panel" id="panel-graph">
+  <div class="docs">
+
+    <h2>BPW Running Gear Knowledge Graph</h2>
+    <p class="claim">Ein Knowledge Graph, der nicht nur Daten speichert &mdash; sondern erkl&auml;rt, warum Dinge passieren.</p>
+
+    <!-- Stats Bar -->
+    <div style="background:var(--navy);border-radius:16px;padding:1.5rem 2rem;display:flex;justify-content:space-around;flex-wrap:wrap;gap:1rem;margin-bottom:2rem;box-shadow:0 4px 20px rgba(0,24,73,0.2)">
+      <div style="text-align:center"><div style="font-size:1.8rem;font-weight:700;color:var(--teal)" id="g-nodes">&mdash;</div><div style="font-size:0.68rem;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.05em">Knoten</div></div>
+      <div style="text-align:center"><div style="font-size:1.8rem;font-weight:700;color:var(--teal)" id="g-edges">&mdash;</div><div style="font-size:0.68rem;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.05em">Kanten</div></div>
+      <div style="text-align:center"><div style="font-size:1.8rem;font-weight:700;color:var(--teal)">52</div><div style="font-size:0.68rem;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.05em">Kataloge</div></div>
+      <div style="text-align:center"><div style="font-size:1.8rem;font-weight:700;color:var(--teal)">30+</div><div style="font-size:0.68rem;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.05em">Hersteller</div></div>
+      <div style="text-align:center"><div style="font-size:1.8rem;font-weight:700;color:var(--teal)" id="g-version">&mdash;</div><div style="font-size:0.68rem;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.05em">Version</div></div>
+    </div>
+
+    <h3>Knotentypen</h3>
+    <p>Der Graph modelliert die gesamte Wertsch&ouml;pfungskette rund um Trailer-Achsen und Fahrwerkskomponenten.</p>
+    <div id="g-node-types" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:2rem"></div>
+
+    <h3>Kantentypen</h3>
+    <p>Beziehungen zwischen den Knoten &mdash; von Kompatibilit&auml;t &uuml;ber Herstellerzuordnung bis zu Normverletzungen.</p>
+    <div id="g-edge-types" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:2rem"></div>
+
+    <h3>Baugruppen</h3>
+    <p>Die Baugruppen des Fahrwerks mit ihren Unterbaugruppen.</p>
+    <div id="g-baugruppen" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0.5rem;margin-bottom:2rem"></div>
+
+    <h3>Ontologie &amp; Strukturierung</h3>
+    <p>
+      Der Graph basiert auf einer Ontologie, die sich an folgenden ISO-Normen orientiert:
+      <strong>ISO 11452</strong> (Fahrzeugkomponenten), <strong>ISO 7638</strong> (Verbindungen Zugfahrzeug/Anh&auml;nger),
+      <strong>ISO 1726</strong> (Begriffe Anh&auml;ngerfahrzeuge), <strong>ISO 11992</strong> (Datenkommunikation Zugfahrzeug/Anh&auml;nger)
+      und <strong>ISO 8855</strong> (Fahrdynamik-Begriffe).
+      Die Knoten- und Kantentypen bilden das BPW-Datenmodell mit 12 Knotentypen und 24 Kantentypen ab.
+    </p>
+
+    <h3>Datenquellen</h3>
+    <p>
+      Der Graph wurde aus <strong>52 Ersatzteilkatalogen</strong> von &uuml;ber 30 Herstellern aufgebaut.
+      Darunter BPW, SAF-Holland, Knorr-Bremse, WABCO, Hendrickson, Krone, K&ouml;gel, DAF, MAN, Volvo, Scania, MEYLE, JOST, Continental und viele mehr.
+      Jeder Katalog wurde maschinell geparst &mdash; Teilenummern, Cross-References und Bauteil-Metadaten extrahiert.
+    </p>
+    <p>
+      Zus&auml;tzlich enth&auml;lt der Graph <strong>KBA-R&uuml;ckrufe</strong>, <strong>technische Normen</strong> (UN R13, UN R90, ECE, DIN, ISO),
+      <strong>Trailer-Modelle</strong> und <strong>Erkenntnisse</strong> aus der Marktanalyse.
+    </p>
+
+    <div style="margin-top:2rem;background:linear-gradient(135deg,var(--navy) 0%,#0a2a7a 40%,var(--blue) 100%);border-radius:16px;padding:2rem;text-align:center;color:white;box-shadow:0 8px 30px rgba(0,24,73,0.2)">
+      <div style="font-size:1.3rem;font-weight:700;margin-bottom:0.3rem">Fragen? Einfach fragen.</div>
+      <div style="font-size:0.82rem;opacity:0.8;margin-bottom:1rem">Wechsle zum Chat-Tab und stell dem Graphen eine Frage.</div>
+      <button onclick="switchTab('chat')" style="background:var(--teal);color:var(--navy);border:none;padding:0.6rem 1.5rem;border-radius:24px;font-weight:700;font-size:0.82rem;cursor:pointer;font-family:'DM Sans',sans-serif">Zum Chat</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════ API DOCS PANEL ═══════════ -->
+<div class="panel" id="panel-api">
+  <div class="docs">
+
+    <h2>REST API</h2>
+    <p class="claim">Den Knowledge Graph in APON einbinden.</p>
+
+    <div class="base-url">
+      <span>BASE_URL/api/</span>
+      <button class="copy-btn" onclick="navigator.clipboard.writeText('BASE_URL/api/');this.textContent='Kopiert!';setTimeout(()=>this.textContent='Kopieren',1500)">Kopieren</button>
+    </div>
+
+    <h3><span class="badge badge-teal">Lesen</span> Endpunkte</h3>
+
+    <div class="endpoint">
+      <span class="method method-get">GET</span>
+      <span class="path">/api/stats</span>
+      <div class="desc">Gesamtstatistiken des Graphen &mdash; Knoten, Kanten, Version</div>
+      <div class="example">
+        curl BASE_URL<span class="kw">/api/stats</span>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <span class="method method-get">GET</span>
+      <span class="path">/api/bauteile?q=<em>suchbegriff</em></span>
+      <div class="desc">Bauteile suchen nach Teilenummer, Name oder Typ. Optional: <code>&amp;hersteller=BPW</code> <code>&amp;baugruppe=BG_BREMSSCHEIBE</code></div>
+      <div class="example">
+        curl "<span class="kw">BASE_URL/api/bauteile?q=bremsscheibe&amp;hersteller=BPW</span>"
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <span class="method method-get">GET</span>
+      <span class="path">/api/cross-references/<em>{teilenummer}</em></span>
+      <div class="desc">Kompatible Teile anderer Hersteller f&uuml;r eine Teilenummer (Cross-References). Optional: <code>&amp;hersteller=SAF</code></div>
+      <div class="example">
+        curl "<span class="kw">BASE_URL/api/cross-references/05.397.28.01.0</span>"<br>
+        <span class="str">// &rarr; 9 kompatible Alternativen (Knorr-Bremse, Hendrickson, SAF ...)</span>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <span class="method method-get">GET</span>
+      <span class="path">/api/zulieferer</span>
+      <div class="desc">Alle Tier-1 und Tier-2 Zulieferer. Optional: <code>?kategorie=Lager</code></div>
+      <div class="example">
+        curl "<span class="kw">BASE_URL/api/zulieferer?kategorie=Lager</span>"<br>
+        <span class="str">// &rarr; SKF, Schaeffler, Timken</span>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <span class="method method-get">GET</span>
+      <span class="path">/api/reklamationen</span>
+      <div class="desc">KBA-R&uuml;ckrufe und Reklamationen. Optional: <code>?hersteller=Krone</code></div>
+      <div class="example">
+        curl "<span class="kw">BASE_URL/api/reklamationen?hersteller=Krone</span>"
+      </div>
+    </div>
+
+    <h3><span class="badge badge-purple">KI-Chat</span> Endpunkt</h3>
+
+    <div class="endpoint">
+      <span class="method method-post">POST</span>
+      <span class="path">/api/chat</span>
+      <div class="desc">Nat&uuml;rlichsprachliche Fragen an den Graph stellen. Ohne API Key: smarte Graph-Engine. Mit API Key: Claude AI mit Tool-Use.</div>
+      <div class="example">
+        curl -X POST BASE_URL<span class="kw">/api/chat</span> \<br>
+        &nbsp; -H "<span class="str">Content-Type: application/json</span>" \<br>
+        &nbsp; -d '<span class="str">{"message": "Wer liefert Radlager an BPW?"}</span>'<br><br>
+        <span class="str">// Mit Claude AI:</span><br>
+        &nbsp; -d '<span class="str">{"message": "...", "api_key": "sk-ant-...", "history": []}</span>'
+      </div>
+    </div>
+
+    <h3>Integration</h3>
+    <p>
+      Der Server l&auml;dt den Graphen (<strong>silver_lake_merged.json</strong>, v11.6) beim Start in den RAM.
+      Alle Abfragen laufen in Echtzeit gegen den In-Memory-Index &mdash; keine Datenbank n&ouml;tig.
+    </p>
+    <p>
+      <strong>Python:</strong>
+    </p>
+    <div class="endpoint">
+      <div class="example">
+        <span class="kw">import</span> requests<br><br>
+        <span class="str"># Cross-References f&uuml;r ein BPW-Teil</span><br>
+        r = requests.get(<span class="str">"BASE_URL/api/cross-references/05.397.28.01.0"</span>)<br>
+        data = r.json()<br>
+        <span class="kw">for</span> ref <span class="kw">in</span> data[<span class="str">"cross_references"</span>]:<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;print(f<span class="str">"{ref['teilenummer']} ({ref['hersteller']})"</span>)
+      </div>
+    </div>
+
+    <p>
+      <strong>JavaScript:</strong>
+    </p>
+    <div class="endpoint">
+      <div class="example">
+        <span class="kw">const</span> resp = <span class="kw">await</span> fetch(<span class="str">"/api/chat"</span>, {<br>
+        &nbsp;&nbsp;method: <span class="str">"POST"</span>,<br>
+        &nbsp;&nbsp;headers: { <span class="str">"Content-Type"</span>: <span class="str">"application/json"</span> },<br>
+        &nbsp;&nbsp;body: JSON.stringify({ message: <span class="str">"Zulieferer f&uuml;r Bremsen?"</span> })<br>
+        });<br>
+        <span class="kw">const</span> { answer, tools_used } = <span class="kw">await</span> resp.json();
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<script>
+  // ── Base URL (auto-detect local vs deployed) ──
+  const BASE_URL = window.location.origin;
+
+  // ── Dynamische API-URLs im API-Panel setzen ──
+  document.querySelectorAll('.base-url span, .example, .copy-btn').forEach(el => {
+    if(el.innerHTML) el.innerHTML = el.innerHTML.replace(/BASE_URL/g, BASE_URL);
+    if(el.getAttribute('onclick')) el.setAttribute('onclick', el.getAttribute('onclick').replace(/BASE_URL/g, BASE_URL));
+  });
+
+  // ── Stats + Graph Panel ──
+  const EDGE_LABELS={
+    'E01_besteht_aus':'Besteht aus','E02_verwendet_werkstoff':'Verwendet Werkstoff',
+    'E03_geprueft_durch':'Geprüft durch','E04_hat_reklamation':'Hat Reklamation',
+    'E06_empfiehlt_aenderung':'Empfiehlt Änderung','E06_im_feldeinsatz':'Im Feldeinsatz',
+    'E07_widerspricht':'Widerspricht','E08_bestaetigt':'Bestätigt',
+    'E09_bezieht_sich_auf':'Bezieht sich auf','E09_publiziert_von':'Publiziert von',
+    'E10_erfuellt_norm':'Erfüllt Norm','E11_basiert_auf':'Basiert auf',
+    'E12_verantwortlich_fuer':'Verantwortlich für','E12_dokumentiert_in':'Dokumentiert in',
+    'E13_betrifft':'Betrifft','E14_verletzt_norm':'Verletzt Norm',
+    'E15_arbeitet_bei':'Arbeitet bei','E15_abgeleitet_aus':'Abgeleitet aus',
+    'M01_herstellt':'Herstellt','M01_hergestellt_von':'Hergestellt von',
+    'M02_liefert_an':'Liefert an','M03_verbaut_in':'Verbaut in',
+    'M04_hat_baugruppe':'Hat Baugruppe','M05_kompatibel_mit':'Kompatibel mit'
+  };
+  const NODE_ICONS={
+    'Bauteil':'⚙️','Dokument':'📄','Erkenntnis':'💡','Norm':'📏',
+    'Organisation':'🏢','Produkt':'📦','Baugruppe':'🔧','TrailerModell':'🚛',
+    'Reklamation':'⚠️','Werkstoff':'🧪','Pruefung':'🔬','Feldeinsatz':'🛣️',
+    'Aenderung':'🔄','Person':'👤','Trailer':'🚚'
+  };
+
+  fetch('/api/stats').then(r=>r.json()).then(d=>{
+    // Nav bar stats
+    document.getElementById('stat-nodes').textContent=d.knoten_gesamt?.toLocaleString('de')||'—';
+    document.getElementById('stat-edges').textContent=d.kanten_gesamt?.toLocaleString('de')||'—';
+    document.getElementById('stat-version').textContent=d.version||'—';
+
+    // Graph panel stats
+    document.getElementById('g-nodes').textContent=d.knoten_gesamt?.toLocaleString('de')||'—';
+    document.getElementById('g-edges').textContent=d.kanten_gesamt?.toLocaleString('de')||'—';
+    document.getElementById('g-version').textContent=d.version||'—';
+
+    // Node type pills
+    const ntc=document.getElementById('g-node-types');
+    if(ntc&&d.knoten_nach_typ){
+      const sorted=Object.entries(d.knoten_nach_typ).sort((a,b)=>b[1]-a[1]);
+      ntc.innerHTML=sorted.filter(([k,v])=>v>0).map(([k,v])=>{
+        const icon=NODE_ICONS[k]||'📊';
+        return `<div style="background:var(--gray-bg);border-radius:10px;padding:0.5rem 0.8rem;display:flex;align-items:center;gap:0.4rem;font-size:0.75rem">
+          <span>${icon}</span><strong>${k}</strong><span style="color:var(--teal);font-weight:700">${v.toLocaleString('de')}</span>
+        </div>`;
+      }).join('');
+    }
+
+    // Edge type pills
+    const etc=document.getElementById('g-edge-types');
+    if(etc&&d.kanten_nach_typ){
+      const sorted=Object.entries(d.kanten_nach_typ).sort((a,b)=>b[1]-a[1]);
+      etc.innerHTML=sorted.map(([k,v])=>{
+        const label=EDGE_LABELS[k]||k.replace(/_/g,' ');
+        return `<div style="background:var(--gray-bg);border-radius:10px;padding:0.4rem 0.7rem;font-size:0.7rem;display:flex;align-items:center;gap:0.3rem">
+          <span style="color:var(--blue);font-weight:600">${label}</span><span style="color:var(--gray);font-size:0.65rem">${v.toLocaleString('de')}</span>
+        </div>`;
+      }).join('');
+    }
+
+    // Baugruppen cards
+    const bgc=document.getElementById('g-baugruppen');
+    if(bgc&&d.baugruppen){
+      const top=d.baugruppen.filter(b=>b.oberbaugruppe_id==='BG_FAHRWERK');
+      const children=d.baugruppen.filter(b=>b.oberbaugruppe_id && b.oberbaugruppe_id!=='BG_FAHRWERK' && b.id!=='BG_FAHRWERK');
+      let html='';
+      top.forEach(bg=>{
+        const desc=bg.beschreibung?(bg.beschreibung.length>80?bg.beschreibung.slice(0,80)+'…':bg.beschreibung):'';
+        const subs=children.filter(c=>c.oberbaugruppe_id===bg.id);
+        let subsHtml='';
+        if(subs.length){
+          subsHtml='<div style="margin-top:0.5rem;display:flex;flex-wrap:wrap;gap:0.3rem">'+subs.map(s=>
+            `<span style="font-size:0.62rem;background:rgba(56,184,184,0.12);color:#1a6b6b;padding:2px 8px;border-radius:10px;font-weight:500">${s.name}</span>`
+          ).join('')+'</div>';
+        }
+        html+=`<div style="background:var(--gray-bg);border-radius:12px;padding:0.75rem;border-left:3px solid var(--teal)">
+          <div style="font-weight:600;font-size:0.78rem;margin-bottom:0.2rem">${bg.name}</div>
+          <div style="font-size:0.68rem;color:var(--gray);line-height:1.3">${desc}</div>
+          ${subsHtml}
+        </div>`;
+      });
+      bgc.innerHTML=html;
+    }
+  }).catch(()=>{});
+
+  // ── Tabs ──
+  function switchTab(name){
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    document.getElementById('panel-'+name).classList.add('active');
+    const tabBtn=document.querySelector(`.tab[data-tab="${name}"]`);
+    if(tabBtn)tabBtn.classList.add('active');
+  }
+
+  // ── API Key (server-side via ANTHROPIC_API_KEY env var) ──
+  const apiKeyInput=document.getElementById('apiKey');
+
+  // ── Chat ──
+  function askExample(btn){document.getElementById('userInput').value=btn.textContent;sendMessage()}
+
+  function addMessage(role,content,toolsUsed,modeLabel){
+    const chat=document.getElementById('chat');
+    const div=document.createElement('div');
+    div.className=`message ${role}`;
+    let html=content.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+      .replace(/`(.*?)`/g,'<code>$1</code>')
+      .replace(/\n/g,'<br>');
+    div.innerHTML=html;
+    if(toolsUsed&&toolsUsed.length>0){
+      const td=document.createElement('div');td.className='tools-used';
+      let th='';if(modeLabel)th+=modeLabel+' · ';
+      th+=toolsUsed.map(t=>`<span>${t}</span>`).join('');
+      td.innerHTML=th;div.appendChild(td);
+    }
+    chat.appendChild(div);chat.scrollTop=chat.scrollHeight;
+  }
+
+  function showTyping(){const c=document.getElementById('chat');const d=document.createElement('div');
+    d.className='typing';d.id='typing';d.innerHTML='<span></span><span></span><span></span>';c.appendChild(d);c.scrollTop=c.scrollHeight}
+  function hideTyping(){const e=document.getElementById('typing');if(e)e.remove()}
+
+  let chatHistory=[];
+
+  async function sendMessage(){
+    const input=document.getElementById('userInput');
+    const msg=input.value.trim();if(!msg)return;
+    const apiKey=apiKeyInput.value.trim();
+    input.value='';addMessage('user',msg);
+    chatHistory.push({role:'user',content:msg});
+    const sendBtn=document.getElementById('sendBtn');
+    sendBtn.disabled=true;showTyping();
+    try{
+      const resp=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({message:msg,api_key:apiKey,history:chatHistory.slice(0,-1)})});
+      hideTyping();
+      if(!resp.ok){const err=await resp.json().catch(()=>({}));addMessage('system',`Fehler: ${err.detail||resp.statusText}`)}
+      else{
+        const data=await resp.json();
+        const ml=data.mode==='claude'?'Claude AI':'Graph-Engine';
+        addMessage('assistant',data.answer,data.tools_used,ml);
+        chatHistory.push({role:'assistant',content:data.answer});
+        if(chatHistory.length>30)chatHistory=chatHistory.slice(-30);
+      }
+    }catch(e){hideTyping();addMessage('system',`Verbindungsfehler: ${e.message}`)}
+    sendBtn.disabled=false;input.focus();
+  }
+</script>
+</body>
+</html>
