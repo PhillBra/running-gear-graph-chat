@@ -254,6 +254,166 @@ def get_trailer_modelle(achshersteller: str = None):
     return results
 
 
+def search_patente(query: str = None, anmelder: str = None, ipc_klasse: str = None, limit: int = 20):
+    """Sucht Patente nach Titel, Anmelder, IPC-Klasse oder Doc-ID."""
+    results = []
+    q = (query or "").lower()
+
+    for pat in G["nodes"].get("Patent", []):
+        if len(results) >= limit:
+            break
+
+        # Filter: Anmelder
+        if anmelder:
+            # Check P01 edges
+            pat_orgs = []
+            for e in EDGES_BY_VON.get(pat["id"], []):
+                if e["_edge_typ"] == "P01_angemeldet_von":
+                    org = ID_INDEX.get(e["nach"])
+                    if org:
+                        pat_orgs.append(org.get("name", ""))
+            if not any(anmelder.lower() in o.lower() for o in pat_orgs):
+                continue
+
+        # Filter: IPC-Klasse
+        if ipc_klasse:
+            ipc_list = pat.get("ipc_classes", [])
+            if not any(ipc_klasse.upper() in ipc.upper() for ipc in ipc_list):
+                continue
+
+        # Filter: Textsuche
+        if q:
+            text = " ".join([
+                str(pat.get("titel", "")),
+                str(pat.get("titel_en", "")),
+                str(pat.get("abstract", "")),
+                str(pat.get("doc_id", "")),
+            ]).lower()
+            if q not in text:
+                continue
+
+        # Anmelder-Namen holen
+        anmelder_namen = []
+        for e in EDGES_BY_VON.get(pat["id"], []):
+            if e["_edge_typ"] == "P01_angemeldet_von":
+                org = ID_INDEX.get(e["nach"])
+                if org:
+                    anmelder_namen.append(org.get("name", ""))
+
+        results.append({
+            "id": pat["id"],
+            "doc_id": pat.get("doc_id"),
+            "titel": pat.get("titel", ""),
+            "anmelder": anmelder_namen,
+            "ipc_classes": pat.get("ipc_classes", []),
+            "filing_date": pat.get("filing_date", ""),
+            "publication_date": pat.get("publication_date", ""),
+            "abstract": (pat.get("abstract", "") or "")[:200],
+        })
+
+    return {"patente": results, "count": len(results), "total_im_graph": len(G["nodes"].get("Patent", []))}
+
+
+def get_patent_statistik(anmelder: str = None):
+    """Liefert Patent-Statistiken: Anzahl pro Anmelder, IPC-Klasse, Jahr."""
+    from collections import Counter
+
+    anmelder_count = Counter()
+    ipc_count = Counter()
+    year_count = Counter()
+
+    for pat in G["nodes"].get("Patent", []):
+        # Anmelder
+        for e in EDGES_BY_VON.get(pat["id"], []):
+            if e["_edge_typ"] == "P01_angemeldet_von":
+                org = ID_INDEX.get(e["nach"])
+                if org:
+                    anmelder_count[org.get("name", "?")] += 1
+
+        # IPC
+        for ipc in pat.get("ipc_classes", []):
+            # Nur Hauptklasse (z.B. B60B 35)
+            ipc_short = ipc.strip()[:10].strip()
+            ipc_count[ipc_short] += 1
+
+        # Jahr
+        pub = pat.get("publication_date", "")
+        if len(pub) >= 4:
+            year_count[pub[:4]] += 1
+
+    result = {
+        "total_patente": len(G["nodes"].get("Patent", [])),
+        "top_anmelder": [{"name": n, "count": c} for n, c in anmelder_count.most_common(20)],
+        "top_ipc_klassen": [{"ipc": i, "count": c} for i, c in ipc_count.most_common(10)],
+        "nach_jahr": [{"jahr": y, "count": c} for y, c in sorted(year_count.items())],
+    }
+
+    # Filter für spezifischen Anmelder
+    if anmelder:
+        filtered = [a for a in result["top_anmelder"] if anmelder.lower() in a["name"].lower()]
+        result["anmelder_filter"] = filtered
+
+        # Patente dieses Anmelders
+        anm_patents = []
+        for pat in G["nodes"].get("Patent", []):
+            for e in EDGES_BY_VON.get(pat["id"], []):
+                if e["_edge_typ"] == "P01_angemeldet_von":
+                    org = ID_INDEX.get(e["nach"])
+                    if org and anmelder.lower() in org.get("name", "").lower():
+                        anm_patents.append({
+                            "doc_id": pat.get("doc_id"),
+                            "titel": pat.get("titel", ""),
+                        })
+                        break
+        result["patente_des_anmelders"] = anm_patents[:30]
+
+    return result
+
+
+def get_wettbewerber_patentvergleich():
+    """Vergleicht die Patentportfolios der Wettbewerber."""
+    from collections import Counter
+
+    # Key competitors
+    key_orgs = ["ORG_BPW", "ORG_SAF_HOLLAND", "ORG_ZF", "ORG_MERITOR", "ORG_KNORR",
+                "ORG_HENDRICKSON", "ORG_SCHAEFFLER", "ORG_HALDEX", "ORG_GIGANT"]
+
+    comparison = {}
+    for org_id in key_orgs:
+        org = ID_INDEX.get(org_id)
+        if not org:
+            continue
+        name = org.get("name", org_id)
+
+        patents = []
+        for e in EDGES_BY_NACH.get(org_id, []):
+            if e["_edge_typ"] == "P01_angemeldet_von":
+                pat = ID_INDEX.get(e["von"])
+                if pat:
+                    patents.append(pat)
+
+        ipc_dist = Counter()
+        for p in patents:
+            for ipc in p.get("ipc_classes", []):
+                if "B60B  35" in ipc or "B60B 35" in ipc:
+                    ipc_dist["Achsen (B60B35)"] += 1
+                elif "B60B  27" in ipc or "B60B 27" in ipc:
+                    ipc_dist["Radnaben (B60B27)"] += 1
+                elif "B60B  37" in ipc or "B60B 37" in ipc:
+                    ipc_dist["Achslagerung (B60B37)"] += 1
+                elif "B60T" in ipc:
+                    ipc_dist["Bremsen (B60T)"] += 1
+                elif "B60G" in ipc:
+                    ipc_dist["Federung (B60G)"] += 1
+
+        comparison[name] = {
+            "anzahl_patente": len(patents),
+            "ipc_verteilung": dict(ipc_dist),
+        }
+
+    return {"vergleich": comparison, "hinweis": "Basierend auf EP/DE Patenten ab 2000 in IPC B60B35/27/37"}
+
+
 def get_graph_stats():
     """Liefert Statistiken zum Graphen."""
     # Baugruppen mit Beschreibung (nur Hauptbaugruppen = oberbaugruppe_id ist None oder BG_FAHRWERK)
@@ -326,6 +486,21 @@ TOOLS = [
 
     {"name": "get_graph_stats", "description": "Liefert Statistiken zum Knowledge Graph (Anzahl Knoten, Kanten, Versionen).",
      "input_schema": {"type": "object", "properties": {}}},
+
+    {"name": "search_patente", "description": "Sucht Patente im Graph nach Titel, Anmelder (z.B. BPW, SAF, ZF), IPC-Klasse oder Doc-ID. Nutze dies für Fragen wie 'Welche Patente hat BPW?' oder 'Patente zu Achsen'.",
+     "input_schema": {"type": "object", "properties": {
+         "query": {"type": "string", "description": "Optional: Suchbegriff (Titel, Abstract, Doc-ID)"},
+         "anmelder": {"type": "string", "description": "Optional: Nach Anmelder/Firma filtern (z.B. 'BPW', 'SAF', 'ZF')"},
+         "ipc_klasse": {"type": "string", "description": "Optional: Nach IPC-Klasse filtern (z.B. 'B60B35' für Achsen, 'B60B27' für Radnaben)"},
+     }}},
+
+    {"name": "get_patent_statistik", "description": "Liefert Patent-Statistiken: Top-Anmelder, IPC-Verteilung, Patente pro Jahr. Optional gefiltert nach Anmelder.",
+     "input_schema": {"type": "object", "properties": {
+         "anmelder": {"type": "string", "description": "Optional: Statistik für einen bestimmten Anmelder (z.B. 'BPW', 'SAF')"},
+     }}},
+
+    {"name": "get_wettbewerber_patentvergleich", "description": "Vergleicht die Patentportfolios der wichtigsten Wettbewerber (BPW, SAF, ZF, Meritor, Knorr, Hendrickson, Schaeffler).",
+     "input_schema": {"type": "object", "properties": {}}},
 ]
 
 TOOL_FUNCTIONS = {
@@ -339,6 +514,9 @@ TOOL_FUNCTIONS = {
     "get_normen": get_normen,
     "get_trailer_modelle": get_trailer_modelle,
     "get_graph_stats": get_graph_stats,
+    "search_patente": search_patente,
+    "get_patent_statistik": get_patent_statistik,
+    "get_wettbewerber_patentvergleich": get_wettbewerber_patentvergleich,
 }
 
 # ── Smart Local Query Engine (kein API Key nötig) ───────────────────────────
@@ -359,6 +537,7 @@ INTENT_KEYWORDS = {
     "stats": ["statistik", "übersicht", "zusammenfassung", "wie viele", "wieviele", "anzahl", "graph", "gesamt", "überblick"],
     "dokument": ["dokument", "katalog", "kataloge", "handbuch", "dokumentiert", "in welchem"],
     "baugruppe": ["baugruppe", "komponente", "system", "alle teile von", "teile der"],
+    "patent": ["patent", "patente", "erfindung", "erfinder", "anmelder", "ipc", "schutzrecht", "gebrauchsmuster", "intellectual property", "ip-portfolio"],
     "search": ["suche", "finde", "zeig", "welche", "gibt es", "list"],
 }
 
@@ -405,7 +584,7 @@ def detect_intent(msg: str):
 
     # Bei Gleichstand: spezifischere Intents bevorzugen
     # "Wie viele Zulieferer" → zulieferer > stats
-    priority_order = ["cross_ref", "reklamation", "normen", "zulieferer", "mitbewerber", "trailer", "dokument", "baugruppe", "search", "stats"]
+    priority_order = ["cross_ref", "patent", "reklamation", "normen", "zulieferer", "mitbewerber", "trailer", "dokument", "baugruppe", "search", "stats"]
     if scores:
         max_score = max(scores.values())
         candidates = [k for k, v in scores.items() if v == max_score]
@@ -678,7 +857,8 @@ def smart_answer(msg: str, history: list = None):
         # Kurze Nachricht ohne Teilenummer → konversational prüfen
         graph_words = {"bauteil", "teil", "norm", "zulieferer", "hersteller", "bpw", "saf",
                        "bremsscheibe", "cross", "reklamation", "rückruf", "trailer", "achse",
-                       "knorr", "wabco", "krone", "baugruppe", "katalog", "graph"}
+                       "knorr", "wabco", "krone", "baugruppe", "katalog", "graph",
+                       "patent", "patente", "erfinder", "anmelder", "ipc"}
         has_graph_word = any(gw in msg_lower for gw in graph_words)
         if not has_graph_word:
             is_conversational = True
@@ -756,6 +936,7 @@ def smart_answer(msg: str, history: list = None):
                 "Ich kann dir helfen mit:\n"
                 "• **Bauteile suchen** — z.B. \"Welche Bremsscheiben bietet BPW an?\"\n"
                 "• **Cross-References** — z.B. \"Alternativen für 05.397.28.01.0\"\n"
+                "• **Patente** — z.B. \"Welche Patente hat BPW?\" oder \"Patentvergleich der Wettbewerber\"\n"
                 "• **Zulieferer** — z.B. \"Wer liefert Radlager an BPW?\"\n"
                 "• **Normen** — z.B. \"Welche Normen gelten für Bremsen?\"\n"
                 "• **Reklamationen** — z.B. \"KBA-Rückrufe für Krone\"\n"
@@ -835,6 +1016,57 @@ def smart_answer(msg: str, history: list = None):
         result = get_trailer_modelle(herst_search)
         tools_used.append("get_trailer_modelle")
         answer = format_trailer_response(result, herst_search)
+
+    elif intent == "patent":
+        herst_search = info.get("hersteller_short") or info.get("hersteller")
+        # Check if it's a comparison question
+        msg_lower_check = msg.lower()
+        is_comparison = any(w in msg_lower_check for w in ["vergleich", "vergleiche", "vs", "gegen", "comparison", "portfolio"])
+        is_stats = any(w in msg_lower_check for w in ["wie viele", "wieviele", "anzahl", "statistik", "übersicht", "ranking", "top"])
+
+        if is_comparison:
+            result = get_wettbewerber_patentvergleich()
+            tools_used.append("get_wettbewerber_patentvergleich")
+            lines = ["**Patentvergleich der Wettbewerber:**\n"]
+            for name, data in sorted(result["vergleich"].items(), key=lambda x: -x[1]["anzahl_patente"]):
+                line = f"• **{name}**: {data['anzahl_patente']} Patente"
+                if data.get("ipc_verteilung"):
+                    details = ", ".join([f"{k}: {v}" for k, v in data["ipc_verteilung"].items()])
+                    line += f" ({details})"
+                lines.append(line)
+            lines.append(f"\n_{result.get('hinweis', '')}_")
+            answer = "\n".join(lines)
+        elif is_stats or (not herst_search and not info.get("teilenummer")):
+            result = get_patent_statistik(herst_search)
+            tools_used.append("get_patent_statistik")
+            lines = [f"**Patent-Statistik** ({result['total_patente']} Patente im Graph)\n"]
+            lines.append("**Top Anmelder:**")
+            for a in result["top_anmelder"][:10]:
+                lines.append(f"  • {a['name']}: {a['count']}")
+            if result.get("patente_des_anmelders"):
+                lines.append(f"\n**Patente von {herst_search}:**")
+                for p in result["patente_des_anmelders"][:10]:
+                    lines.append(f"  • {p['doc_id']}: {p['titel'][:80]}")
+            answer = "\n".join(lines)
+        else:
+            result = search_patente(query=info.get("teilenummer") or None, anmelder=herst_search)
+            tools_used.append("search_patente")
+            pats = result.get("patente", [])
+            if pats:
+                lines = [f"**{result['count']} Patente gefunden** (von {result['total_im_graph']} im Graph):\n"]
+                for i, p in enumerate(pats[:15], 1):
+                    anm = ", ".join(p.get("anmelder", []))
+                    line = f"{i}. **{p['doc_id']}** — {p['titel'][:80]}"
+                    if anm:
+                        line += f" ({anm})"
+                    if p.get("filing_date"):
+                        line += f" [{p['filing_date'][:4]}]"
+                    lines.append(line)
+                if result['count'] > 15:
+                    lines.append(f"\n... und {result['count'] - 15} weitere.")
+                answer = "\n".join(lines)
+            else:
+                answer = f"Keine Patente gefunden{' für ' + herst_search if herst_search else ''}. Der Graph enthält {result['total_im_graph']} Patente."
 
     elif intent == "stats":
         result = get_graph_stats()
@@ -934,12 +1166,15 @@ DEIN VERHALTEN:
 DER GRAPH:
 - {TOTAL_N:,} Knoten, {TOTAL_E:,} Kanten, basierend auf 52 geparsten Ersatzteilkatalogen
 - Bauteile mit Teilenummern, Cross-References (kompatible Teile anderer Hersteller)
-- 67 Organisationen (Zulieferer, OEMs, Mitbewerber)
+- 500+ Organisationen (Zulieferer, OEMs, Mitbewerber, Patentanmelder)
+- 725 Patente (EPO, IPC B60B35/27/37) mit Anmeldern und Erfindern
+- 2.458 Erfinder-Personen
 - KBA-Reklamationen/Rückrufe
 - 91 technische Normen, 39 Trailer-Modelle
 - Baugruppen: Bremsscheibe, Bremsbelag, Bremse, Fahrwerk, Luftfederung, Radlager, Achse, Sattelkupplung, Stützwinde, Nachsteller, EBS, Beleuchtung, Lenkung
 
 TIPPS FÜR GUTE ANTWORTEN:
+- Bei Patent-Fragen: search_patente findet Patente nach Anmelder, Titel oder IPC. get_patent_statistik zeigt das Ranking. get_wettbewerber_patentvergleich vergleicht die Portfolios.
 - Bei "welche Teile von X nutzen Y-Produkte": Suche Cross-References zwischen den Herstellern
 - Bei Zulieferer-Fragen: get_zulieferer liefert alle Tier-1/Tier-2 mit Rollen
 - Bei Vergleichsfragen: Kombiniere mehrere Tool-Aufrufe
