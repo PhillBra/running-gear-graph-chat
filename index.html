@@ -184,6 +184,7 @@
   <div class="tab active" data-tab="chat" onclick="switchTab('chat')">GraphChat <span style="font-size:0.58rem;font-weight:700;background:var(--teal);color:white;padding:1px 6px;border-radius:8px;margin-left:3px;vertical-align:middle;letter-spacing:0.05em">BETA</span></div>
   <div class="tab" data-tab="api" onclick="switchTab('api')">API</div>
   <div class="tab" data-tab="coverage" onclick="switchTab('coverage')">Datenabdeckung</div>
+  <div class="tab" data-tab="goals" onclick="switchTab('goals')">Zielsetzung <span style="font-size:0.55rem;font-weight:700;background:var(--pink);color:white;padding:1px 6px;border-radius:8px;margin-left:3px;vertical-align:middle;letter-spacing:0.05em">INTERN</span></div>
   <div class="tab tab-external" data-tab="neo4j" onclick="window.open('https://console.neo4j.io','_blank')">Neo4j Explorer</div>
 </div>
 
@@ -474,6 +475,82 @@
       <p style="font-size:0.75rem;color:var(--gray);font-style:italic">
         Schema: silver_schema_v3.1 &bull; Metadaten: metadaten_schema_v1.json
       </p>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════ ZIELSETZUNG PANEL ═══════════ -->
+<div class="panel" id="panel-goals">
+  <div class="coverage-panel">
+
+    <h2>Zielsetzung</h2>
+    <p class="claim">Interne Ziele des EXPLA Running Gear Knowledge Graph.</p>
+
+    <div style="background:linear-gradient(135deg,var(--navy) 0%,#0a2a7a 40%,var(--blue) 100%);border-radius:16px;padding:2rem;margin-bottom:2rem;box-shadow:0 8px 30px rgba(0,24,73,0.2)">
+      <div style="font-size:1.1rem;font-weight:700;color:white;margin-bottom:0.3rem">Vision</div>
+      <div style="font-size:0.88rem;color:rgba(255,255,255,0.85);line-height:1.7">
+        Der umfassendste, &ouml;ffentlich recherchierbare Wissensgraph im Bereich
+        <strong style="color:var(--teal)">Trailer-Fahrwerkstechnik (Running Gear)</strong> &mdash;
+        maschinenlesbar, r&uuml;ckverfolgbar und kontinuierlich wachsend.
+      </div>
+    </div>
+
+    <!-- Ziel 1 -->
+    <div class="coverage-card" style="border-left:4px solid var(--teal)">
+      <h4>1. Maximale Abdeckung &ouml;ffentlich verf&uuml;gbarer Daten</h4>
+      <p>
+        Der Graph soll systematisch alle &ouml;ffentlich zug&auml;nglichen Informationen im Bereich
+        Trailer-Fahrwerkstechnik (&bdquo;Running Gear&ldquo;) erfassen. Dazu z&auml;hlen Ersatzteilkataloge,
+        technische Normen, Patente, Zulassungen, R&uuml;ckrufdaten und Herstellerangaben.
+        Ziel ist es, den Abdeckungsgrad auf allen drei Ebenen (Produktfamilien, Baugruppen, Bauteile)
+        schrittweise zu erh&ouml;hen &mdash; sowohl in der Breite (mehr Hersteller und Bauteile) als auch
+        in der Tiefe (mehr Kantentypen pro Eintrag befüllt).
+      </p>
+      <p style="font-size:0.78rem;color:var(--gray)">
+        <strong>Aktueller Stand:</strong> 25.103 Knoten, 66.602 Kanten, 30+ Hersteller.
+        Abdeckung: &Oslash; 41,6% (Produkte), 27,3% (Baugruppen), 52,1% (Bauteile) &mdash;
+        gemessen an 62 Kantentypen aus dem Schema.
+      </p>
+    </div>
+
+    <!-- Ziel 2 -->
+    <div class="coverage-card" style="border-left:4px solid var(--blue)">
+      <h4>2. Mehrwert f&uuml;r APON</h4>
+      <p>
+        Der Knowledge Graph soll als strukturierte Wissensbasis in die APON-Plattform einflie&szlig;en.
+        Konkret erm&ouml;glicht er: automatisierte Cross-Referenzierung von Ersatzteilen &uuml;ber
+        Herstellergrenzen hinweg, normbasierte Kompatibilit&auml;tspr&uuml;fungen, Identifikation von
+        Bauteilalternativen sowie datengest&uuml;tzte Empfehlungen f&uuml;r Einkauf und Aftermarket.
+        &Uuml;ber die REST-API und den GraphChat ist der Graph bereits programmatisch und
+        konversationell nutzbar.
+      </p>
+    </div>
+
+    <!-- Ziel 3 -->
+    <div class="coverage-card" style="border-left:4px solid var(--purple)">
+      <h4>3. Mehrwert f&uuml;r die Masterarbeit von Johannes</h4>
+      <p>
+        Der Graph dient als praktische Validierung des von Johannes entwickelten Datenmodells
+        (Universit&auml;t Stuttgart, Studiengang Technologiemanagement). Die reale Bef&uuml;llung mit
+        &uuml;ber 25.000 Knoten zeigt, wie tragf&auml;hig das theoretische Schema in der Praxis ist.
+        Die Datenabdeckungsanalyse (62 Kantentypen &times; reale Datenlage) liefert empirische
+        Erkenntnisse dar&uuml;ber, welche Wissenskategorien &ouml;ffentlich gut dokumentiert sind
+        und wo systematische L&uuml;cken bestehen &mdash; ein wertvoller Beitrag f&uuml;r die
+        wissenschaftliche Auswertung.
+      </p>
+    </div>
+
+    <!-- Running Gear Erklärung -->
+    <div style="margin-top:1.5rem;background:var(--gray-bg);border-radius:12px;padding:1.2rem 1.5rem">
+      <div style="font-size:0.82rem;color:var(--navy);line-height:1.7">
+        <strong>Was bedeutet &bdquo;Running Gear&ldquo;?</strong><br>
+        Der englische Fachbegriff bezeichnet das <strong>Fahrwerk</strong> bzw. die
+        <strong>Fahrwerkstechnik</strong> eines Nutzfahrzeug-Anh&auml;ngers (Trailer).
+        Dazu geh&ouml;ren Achsen, Bremsen, Federungen, Radlager, Radnaben und alle
+        zugeh&ouml;rigen Komponenten. Im Deutschen wird h&auml;ufig
+        &bdquo;Achsaggregat&ldquo; oder &bdquo;Fahrgestell-Komponenten&ldquo; verwendet.
+      </div>
     </div>
 
   </div>
