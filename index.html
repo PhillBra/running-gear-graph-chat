@@ -40,6 +40,8 @@
     font-family:'DM Sans',sans-serif}
   .tab:hover{border-color:var(--blue);color:var(--blue)}
   .tab.active{background:var(--blue);color:var(--white);border-color:var(--blue)}
+  .tab-external{position:relative}
+  .tab-external::after{content:'↗';margin-left:4px;font-size:0.65rem;opacity:0.7}
 
   /* ── PANELS ── */
   .panel{display:none;flex:1;overflow:hidden;flex-direction:column}
@@ -125,6 +127,23 @@
 
   footer{text-align:center;padding:0.6rem;font-size:0.68rem;color:var(--gray);letter-spacing:0.03em}
 
+  /* ── DATENABDECKUNG PANEL ── */
+  .coverage-panel{flex:1;overflow-y:auto;max-width:900px;margin:0 auto;padding:2rem;width:100%}
+  .coverage-panel h2{font-size:1.5rem;font-weight:700;color:var(--navy);margin-bottom:0.3rem}
+  .coverage-panel .claim{font-size:0.88rem;color:var(--gray);margin-bottom:2rem}
+  .coverage-card{background:var(--white);border:1px solid var(--gray-bg-solid);border-radius:12px;padding:1.5rem;margin-bottom:1rem;transition:box-shadow .2s}
+  .coverage-card:hover{box-shadow:0 4px 16px rgba(0,24,73,0.06)}
+  .coverage-card h4{font-size:0.95rem;font-weight:700;color:var(--navy);margin-bottom:0.3rem}
+  .coverage-card p{font-size:0.82rem;color:var(--gray);line-height:1.6;margin-bottom:0.75rem}
+  .coverage-stat{display:flex;gap:2rem;margin-bottom:0.75rem}
+  .coverage-stat div{text-align:center}
+  .coverage-stat .big{font-size:1.8rem;font-weight:700;color:var(--teal)}
+  .coverage-stat .sub{font-size:0.68rem;color:var(--gray);text-transform:uppercase;letter-spacing:0.05em}
+  .file-link{display:inline-flex;align-items:center;gap:0.5rem;background:var(--gray-bg);border:1px solid var(--gray-bg-solid);
+    border-radius:10px;padding:0.6rem 1rem;font-size:0.82rem;font-weight:600;color:var(--navy);text-decoration:none;transition:all .2s;margin-right:0.5rem;margin-bottom:0.5rem}
+  .file-link:hover{border-color:var(--blue);color:var(--blue);background:rgba(0,53,213,0.03)}
+  .file-link .icon{font-size:1.1rem}
+
   @media(max-width:768px){nav{padding:0 1rem}.docs{padding:1rem}.chat-container{padding:1rem}}
 </style>
 </head>
@@ -164,6 +183,8 @@
   <div class="tab" data-tab="graph" onclick="switchTab('graph')">Graph Description</div>
   <div class="tab active" data-tab="chat" onclick="switchTab('chat')">GraphChat <span style="font-size:0.58rem;font-weight:700;background:var(--teal);color:white;padding:1px 6px;border-radius:8px;margin-left:3px;vertical-align:middle;letter-spacing:0.05em">BETA</span></div>
   <div class="tab" data-tab="api" onclick="switchTab('api')">API</div>
+  <div class="tab" data-tab="coverage" onclick="switchTab('coverage')">Datenabdeckung</div>
+  <div class="tab tab-external" data-tab="neo4j" onclick="window.open('https://workspace-preview.neo4j.io/connection/connect?connectURL=neo4j%2Bs%3A%2F%2Fcf09139f.databases.neo4j.io&dbUser=neo4j','_blank')">Neo4j Explorer</div>
 </div>
 
 <!-- ═══════════ CHAT PANEL ═══════════ -->
@@ -364,6 +385,99 @@
   </div>
 </div>
 
+
+<!-- ═══════════ DATENABDECKUNG PANEL ═══════════ -->
+<div class="panel" id="panel-coverage">
+  <div class="coverage-panel">
+
+    <h2>Datenabdeckung</h2>
+    <p class="claim">Wie vollst&auml;ndig ist der Knowledge Graph? Scores, Checkpoints und Kantentypen-Mapping.</p>
+
+    <!-- Summary Stats -->
+    <div style="background:var(--navy);border-radius:16px;padding:1.5rem 2rem;display:flex;justify-content:space-around;flex-wrap:wrap;gap:1rem;margin-bottom:2rem;box-shadow:0 4px 20px rgba(0,24,73,0.2)">
+      <div style="text-align:center"><div style="font-size:1.8rem;font-weight:700;color:var(--teal)">41,6%</div><div style="font-size:0.68rem;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.05em">&Oslash; Produktfamilien</div></div>
+      <div style="text-align:center"><div style="font-size:1.8rem;font-weight:700;color:var(--teal)">27,3%</div><div style="font-size:0.68rem;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.05em">&Oslash; Baugruppen</div></div>
+      <div style="text-align:center"><div style="font-size:1.8rem;font-weight:700;color:var(--teal)">52,1%</div><div style="font-size:0.68rem;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.05em">&Oslash; Bauteile</div></div>
+      <div style="text-align:center"><div style="font-size:1.8rem;font-weight:700;color:#fbbf24">62</div><div style="font-size:0.68rem;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.05em">Kantentypen</div></div>
+    </div>
+
+    <p style="font-size:0.82rem;color:var(--gray);margin-bottom:1.5rem">
+      Ein Checkpoint gilt als <strong>erf&uuml;llt</strong>, sobald mindestens eine Information dazu vorliegt.
+      Das bedeutet nicht, dass bereits alle relevanten Details vollst&auml;ndig erfasst sind.
+    </p>
+
+    <!-- Score-Datei -->
+    <div class="coverage-card">
+      <h4>&#128202; Datenabdeckung &mdash; Score-&Uuml;bersicht</h4>
+      <p>
+        Zeigt f&uuml;r 93 BPW-Produktfamilien, 31 Baugruppen und 1.006 Bauteile,
+        wie viel Prozent der extern pr&uuml;fbaren Checkpoints mit Daten bef&uuml;llt sind.
+        Enth&auml;lt zus&auml;tzlich 3 Reiter mit dem Kantentypen-Mapping (je 10 Beispiele &times; 62 Kantentypen).
+      </p>
+      <div style="margin-bottom:0.5rem">
+        <span style="display:inline-block;width:12px;height:12px;background:#4CAF50;border-radius:3px;margin-right:4px;vertical-align:middle"></span><span style="font-size:0.75rem;color:var(--gray)">&ge;60% Gut</span>
+        <span style="display:inline-block;width:12px;height:12px;background:#FFC107;border-radius:3px;margin:0 4px 0 12px;vertical-align:middle"></span><span style="font-size:0.75rem;color:var(--gray)">30-59% Teilweise</span>
+        <span style="display:inline-block;width:12px;height:12px;background:#F44336;border-radius:3px;margin:0 4px 0 12px;vertical-align:middle"></span><span style="font-size:0.75rem;color:var(--gray)">&lt;30% L&uuml;ckenhaft</span>
+      </div>
+      <p style="font-size:0.75rem;color:var(--gray);font-style:italic">
+        7 Reiter: &Uuml;bersicht &bull; Produktfamilien (BPW) &bull; Baugruppen &bull; Bauteile BPW &bull; Produkte&mdash;Kanten &bull; Baugruppen&mdash;Kanten &bull; Bauteile&mdash;Kanten
+      </p>
+      <a class="file-link" href="https://docs.google.com/spreadsheets/d/PLACEHOLDER_SCORE" target="_blank">
+        <span class="icon">&#128196;</span> EXPLA_Datenabdeckung_Score.xlsx
+      </a>
+    </div>
+
+    <!-- Kantenmodell -->
+    <div class="coverage-card">
+      <h4>&#128300; Kantenmodell &mdash; Johannes Schema (62 Typen)</h4>
+      <p>
+        Zeigt f&uuml;r 10 Beispiel-Eintr&auml;ge pro Ebene (Produkte, Baugruppen, Bauteile),
+        welche der 62 Kantentypen aus dem silver_schema_v3.1 mit Daten bef&uuml;llt sind.
+        Spalten sind nach den 10 Kategorien gruppiert: Produktstruktur, Funktionsbeziehungen,
+        Physikalische Wirkbeziehungen, Material&amp;Fertigung, Kosten, Wissenssicherung, Qualit&auml;t,
+        Lieferanten, Nachhaltigkeit, EXPLA-Ontologie.
+      </p>
+      <div class="coverage-stat">
+        <div><div class="big">~15</div><div class="sub">von 62 bei Produkten</div></div>
+        <div><div class="big">~4</div><div class="sub">von 62 bei Baugruppen</div></div>
+        <div><div class="big">~7</div><div class="sub">von 62 bei Bauteilen</div></div>
+      </div>
+      <p style="font-size:0.75rem;color:var(--gray);font-style:italic">
+        Die Kanten-Reiter sind in der Score-Datei integriert (Reiter 5&ndash;7).
+      </p>
+    </div>
+
+    <!-- Neo4j -->
+    <div class="coverage-card">
+      <h4>&#127760; Neo4j Graph Explorer</h4>
+      <p>
+        Der Graph ist auch in Neo4j Aura verf&uuml;gbar f&uuml;r visuelle Exploration und Cypher-Queries.
+      </p>
+      <a class="file-link" href="https://workspace-preview.neo4j.io/connection/connect?connectURL=neo4j%2Bs%3A%2F%2Fcf09139f.databases.neo4j.io&dbUser=neo4j" target="_blank">
+        <span class="icon">&#128065;</span> Neo4j Aura &ouml;ffnen
+      </a>
+      <div style="margin-top:0.75rem;background:var(--gray-bg);border-radius:8px;padding:0.75rem 1rem;font-size:0.75rem;font-family:monospace;color:var(--navy)">
+        <div style="margin-bottom:0.3rem;font-family:'DM Sans',sans-serif;font-weight:600;font-size:0.72rem;color:var(--gray)">Beispiel-Queries:</div>
+        <div style="margin-bottom:0.2rem">MATCH (b:Bauteil)-[:M05_kompatibel_mit]-&gt;(alt) RETURN b, alt LIMIT 50</div>
+        <div>MATCH (p:Produkt)-[:M04_hat_baugruppe]-&gt;(bg) RETURN p, bg</div>
+      </div>
+    </div>
+
+    <!-- Schema -->
+    <div class="coverage-card">
+      <h4>&#128220; Graph-Schema (v3.1)</h4>
+      <p>
+        Das Datenmodell basiert auf der Masterarbeit von Johannes (Universit&auml;t Stuttgart, Technologiemanagement)
+        und der EXPLA-Ontologie. Aktuell: 31 Knotentypen, 62 Kantentypen, bindende Metadaten-Traceability
+        (jede Kante mit Quelle, Konfidenz, Evidenz).
+      </p>
+      <p style="font-size:0.75rem;color:var(--gray);font-style:italic">
+        Schema: silver_schema_v3.1 &bull; Metadaten: metadaten_schema_v1.json
+      </p>
+    </div>
+
+  </div>
+</div>
 
 <script>
   // ── Base URL (auto-detect local vs deployed) ──
