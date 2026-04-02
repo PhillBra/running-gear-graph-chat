@@ -180,11 +180,11 @@
 
 <!-- TABS -->
 <div class="tabs">
+  <div class="tab" data-tab="goals" onclick="switchTab('goals')">Zielsetzung <span style="font-size:0.55rem;font-weight:700;background:var(--pink);color:white;padding:1px 6px;border-radius:8px;margin-left:3px;vertical-align:middle;letter-spacing:0.05em">INTERN</span></div>
   <div class="tab" data-tab="graph" onclick="switchTab('graph')">Graph Description</div>
   <div class="tab active" data-tab="chat" onclick="switchTab('chat')">GraphChat <span style="font-size:0.58rem;font-weight:700;background:var(--teal);color:white;padding:1px 6px;border-radius:8px;margin-left:3px;vertical-align:middle;letter-spacing:0.05em">BETA</span></div>
   <div class="tab" data-tab="api" onclick="switchTab('api')">API</div>
   <div class="tab" data-tab="coverage" onclick="switchTab('coverage')">Datenabdeckung</div>
-  <div class="tab" data-tab="goals" onclick="switchTab('goals')">Zielsetzung <span style="font-size:0.55rem;font-weight:700;background:var(--pink);color:white;padding:1px 6px;border-radius:8px;margin-left:3px;vertical-align:middle;letter-spacing:0.05em">INTERN</span></div>
   <div class="tab tab-external" data-tab="neo4j" onclick="window.open('https://console.neo4j.io','_blank')">Neo4j Explorer</div>
 </div>
 
@@ -490,9 +490,10 @@
     <div style="background:linear-gradient(135deg,var(--navy) 0%,#0a2a7a 40%,var(--blue) 100%);border-radius:16px;padding:2rem;margin-bottom:2rem;box-shadow:0 8px 30px rgba(0,24,73,0.2)">
       <div style="font-size:1.1rem;font-weight:700;color:white;margin-bottom:0.3rem">Vision</div>
       <div style="font-size:0.88rem;color:rgba(255,255,255,0.85);line-height:1.7">
-        Der umfassendste, &ouml;ffentlich recherchierbare Wissensgraph im Bereich
-        <strong style="color:var(--teal)">Trailer-Fahrwerkstechnik (Running Gear)</strong> &mdash;
-        maschinenlesbar, r&uuml;ckverfolgbar und kontinuierlich wachsend.
+        Ein <strong style="color:var(--teal)">selbsterkl&auml;render</strong>, umfassender Wissensgraph
+        im Bereich <strong style="color:var(--teal)">Trailer-Fahrwerkstechnik (Running Gear)</strong> &mdash;
+        der &ouml;ffentlich verf&uuml;gbare Daten maschinenlesbar, r&uuml;ckverfolgbar und f&uuml;r
+        verschiedene Anwendungsf&auml;lle nutzbar macht.
       </div>
     </div>
 
@@ -505,7 +506,7 @@
         technische Normen, Patente, Zulassungen, R&uuml;ckrufdaten und Herstellerangaben.
         Ziel ist es, den Abdeckungsgrad auf allen drei Ebenen (Produktfamilien, Baugruppen, Bauteile)
         schrittweise zu erh&ouml;hen &mdash; sowohl in der Breite (mehr Hersteller und Bauteile) als auch
-        in der Tiefe (mehr Kantentypen pro Eintrag befüllt).
+        in der Tiefe (mehr Kantentypen pro Eintrag bef&uuml;llt).
       </p>
       <p style="font-size:0.78rem;color:var(--gray)">
         <strong>Aktueller Stand:</strong> 25.103 Knoten, 66.602 Kanten, 30+ Hersteller.
@@ -525,19 +526,34 @@
         &Uuml;ber die REST-API und den GraphChat ist der Graph bereits programmatisch und
         konversationell nutzbar.
       </p>
+      <p style="font-size:0.82rem;color:var(--pink);font-weight:600;margin-bottom:0.3rem">
+        &#9888; Offene Punkte:
+      </p>
+      <p style="font-size:0.82rem;color:var(--navy)">
+        Um den Graphen gezielt f&uuml;r APON weiterzuentwickeln, werden konkrete
+        <strong>Use-Case-Beschreibungen</strong> ben&ouml;tigt: Welche Fragen soll der Graph beantworten?
+        Welche Workflows soll er unterst&uuml;tzen? Dar&uuml;ber hinaus muss der Graph im
+        APON-Kontext <strong>getestet</strong> werden, um sicherzustellen, dass Datenqualit&auml;t
+        und Abfragegeschwindigkeit den Anforderungen entsprechen.
+      </p>
     </div>
 
     <!-- Ziel 3 -->
     <div class="coverage-card" style="border-left:4px solid var(--purple)">
       <h4>3. Mehrwert f&uuml;r die Masterarbeit von Johannes</h4>
       <p>
-        Der Graph dient als praktische Validierung des von Johannes entwickelten Datenmodells
-        (Universit&auml;t Stuttgart, Studiengang Technologiemanagement). Die reale Bef&uuml;llung mit
-        &uuml;ber 25.000 Knoten zeigt, wie tragf&auml;hig das theoretische Schema in der Praxis ist.
-        Die Datenabdeckungsanalyse (62 Kantentypen &times; reale Datenlage) liefert empirische
-        Erkenntnisse dar&uuml;ber, welche Wissenskategorien &ouml;ffentlich gut dokumentiert sind
-        und wo systematische L&uuml;cken bestehen &mdash; ein wertvoller Beitrag f&uuml;r die
-        wissenschaftliche Auswertung.
+        Der Graph dient als praktische Validierung des von Johannes entwickelten Datenmodells.
+        Die reale Bef&uuml;llung zeigt, wie tragf&auml;hig das theoretische Schema in der Praxis ist
+        und wo systematische L&uuml;cken in der &ouml;ffentlichen Datenlage bestehen.
+      </p>
+      <p style="font-size:0.82rem;color:var(--pink);font-weight:600;margin-bottom:0.3rem">
+        &#9888; Offener Punkt:
+      </p>
+      <p style="font-size:0.82rem;color:var(--navy)">
+        Es wird <strong>Feedback von Johannes</strong> ben&ouml;tigt, ob der Graph in seiner
+        aktuellen Form f&uuml;r die Masterarbeit genutzt werden kann &mdash; insbesondere ob
+        die Datenabdeckung, das Schema-Mapping und die Metadaten-Qualit&auml;t den
+        wissenschaftlichen Anforderungen gen&uuml;gen.
       </p>
     </div>
 
